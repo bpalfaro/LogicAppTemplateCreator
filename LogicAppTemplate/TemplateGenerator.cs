@@ -314,6 +314,7 @@ namespace LogicAppTemplate
                 //fixes old templates where name sometimes is missing
 
                 var connectionNameParam = AddTemplateParameter($"{connectionName}_name", "string", connectionName);
+                var connectionDisplayNameParam = AddTemplateParameter($"{connectionName}_diplayName", "string", connectionName);
 
                 AzureResourceId cid;
 
@@ -335,7 +336,7 @@ namespace LogicAppTemplate
                 workflowTemplateReference["properties"]["parameters"]["$connections"]["value"][name] = JObject.FromObject(new
                 {
                     id = concatedId,
-                    connectionId = $"[resourceId('Microsoft.Web/connections', parameters('{connectionNameParam}'))]",
+                    connectionId = $"[resourceId('Microsoft.Web/connections', parameters('{connectionDisplayNameParam}'))]",
                     connectionName = $"[parameters('{connectionNameParam}')]"
                 });
 
@@ -353,10 +354,10 @@ namespace LogicAppTemplate
                     //get api instance data, sub,group,provider,name
                     JObject apiResourceInstance = await resourceCollector.GetResource("https://management.azure.com" + connectionId, "2016-06-01");
                     //add depends on to make sure that the api connection is created before the Logic App
-                    ((JArray)workflowTemplateReference["dependsOn"]).Add($"[resourceId('Microsoft.Web/connections', parameters('{connectionNameParam}'))]");
+                    ((JArray)workflowTemplateReference["dependsOn"]).Add($"[resourceId('Microsoft.Web/connections', parameters('{connectionDisplayNameParam}'))]");
 
                     // WriteVerbose($"Generating connection resource for {connectionName}....");
-                    var connectionTemplate = generateConnectionTemplate(apiResource, apiResourceInstance, connectionName, concatedId, connectionNameParam);
+                    var connectionTemplate = generateConnectionTemplate(apiResource, apiResourceInstance, connectionName, concatedId, connectionDisplayNameParam);
 
                     template.resources.Insert(1, connectionTemplate);
                 }

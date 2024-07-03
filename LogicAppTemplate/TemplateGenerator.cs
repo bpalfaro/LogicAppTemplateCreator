@@ -696,6 +696,39 @@ namespace LogicAppTemplate
                         faid.ReplaceValueAfter("functions", "',parameters('" + AddTemplateParameter((FixedFunctionAppName ? "" : action.Name + "-") + "FunctionName", "string", faid.ValueAfter("functions")) + "')");
                     }
                     definition["actions"][action.Name]["inputs"]["function"]["id"] = "[concat('" + faid.ToString() + ")]";
+
+                    var authenticationObj = (JObject)definition["actions"][action.Name]["inputs"]["authentication"];
+                    if (authenticationObj != null)
+                    {
+                        var authType = authenticationObj.Value<string>("type");
+                        if ("ManagedServiceIdentity".Equals(authType, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            var msiAudience = ((JObject)definition["actions"][action.Name]["inputs"]["authentication"]).Value<string>("audience");
+
+                            //only add when not parameterized yet
+                            //audience is not mandatory!
+                            if (msiAudience != null && !Regex.IsMatch(msiAudience, @"parameters\('.*'\)"))
+                            {
+                                definition["actions"][action.Name]["inputs"]["authentication"]["audience"] = "[parameters('" + AddTemplateParameter(action.Name + "-Audience", "string", msiAudience) + "')]";
+                            }
+
+                            if (definition["actions"][action.Name]["inputs"]["authentication"]["identity"] != null)
+                            {
+                                //When the identity exists in a different resourcegroup add this as parameter and in the resourceId() function
+                                var identityResource = new AzureResourceId(definition["actions"][action.Name]["inputs"]["authentication"]["identity"].Value<string>());
+                                var identityResourceGroupAddtion = "";
+                                if (LogicAppResourceGroup != identityResource.ResourceGroupName)
+                                {
+                                    identityResourceGroupAddtion = $"parameters('{Constants.UserAssignedIdentityParameterName}_resourceGroup'),";
+                                    //template.parameters.Add($"{Constants.UserAssignedIdentityParameterName}_resourceGroup", JObject.FromObject(new { type = "string", defaultValue = identityResource.ResourceGroupName }));
+                                }
+
+                                //User Assigned Identity
+                                definition["actions"][action.Name]["inputs"]["authentication"]["identity"] = $"[resourceId({identityResourceGroupAddtion}'Microsoft.ManagedIdentity/userAssignedIdentities/', parameters('{Constants.UserAssignedIdentityParameterName}'))]";
+                            }
+                        }
+
+                    }
                 }
                 else
                 {

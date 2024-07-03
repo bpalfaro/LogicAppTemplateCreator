@@ -314,7 +314,6 @@ namespace LogicAppTemplate
                 //fixes old templates where name sometimes is missing
 
                 var connectionNameParam = AddTemplateParameter($"{connectionName}_name", "string", connectionName);
-                var connectionDisplayNameParam = AddTemplateParameter($"{connectionName}_diplayName", "string", connectionName);
 
                 AzureResourceId cid;
 
@@ -332,6 +331,9 @@ namespace LogicAppTemplate
                     cid = apiIdTemplate(id, connectionNameParam);
                 }
                 string concatedId = $"[concat('{cid.ToString()}')]";
+
+                //api connection name may not match connection dispplay name or name
+                var connectionDisplayNameParam = $"{connectionName}_displayName";
 
                 workflowTemplateReference["properties"]["parameters"]["$connections"]["value"][name] = JObject.FromObject(new
                 {
